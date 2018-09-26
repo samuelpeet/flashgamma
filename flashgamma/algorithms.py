@@ -30,8 +30,8 @@ def difference_between(dist1, dist2, kind="relative"):
     elif kind == "relative":
         new_data = np.copy(dist2.data)
         new_data = (
-            (dist2.data - dist1.data) /
-            dist1.data * 100
+            (dist1.data - dist2.data) /
+            np.max(dist2.data) * 100
         )
         new_data = np.nan_to_num(new_data)
 
@@ -90,6 +90,7 @@ def gamma_evaluation(r_dist, e_dist, delta_dose=3, delta_distance=3,
 
     # Create gamma map and set all points to a passing index
     gamma_map = np.ones_like(r_dist.data)
+    gamma_map[:, :] = np.inf
 
     # Determine how many grid points wide the dta search needs to be
     eval_grids = math.ceil(delta_distance * e_dist.resolution)
@@ -98,7 +99,7 @@ def gamma_evaluation(r_dist, e_dist, delta_dose=3, delta_distance=3,
     x = np.linspace(-eval_grids, eval_grids, 2 * eval_grids + 1)
     kernel = np.stack(np.meshgrid(x, x))
     kernel = np.abs(kernel)
-    kernel *= e_dist.resolution
+    kernel /= e_dist.resolution
     kernel = np.sum(kernel, axis=0)
     kernel = kernel**2
     kernel[np.sqrt(kernel) > delta_distance] = np.inf
@@ -121,7 +122,7 @@ def gamma_evaluation(r_dist, e_dist, delta_dose=3, delta_distance=3,
                 continue
 
             # Find correspoding point in evaluated distribution
-            res_scale = int(r_dist.resolution * e_dist.resolution)
+            res_scale = int(e_dist.resolution / r_dist.resolution)
             c_r, c_c = (i * res_scale, j * res_scale)
 
             # Slice evaluated distribution to same shape as distance kernel
@@ -129,10 +130,11 @@ def gamma_evaluation(r_dist, e_dist, delta_dose=3, delta_distance=3,
             min_c, max_c = (c_c - eval_grids, c_c + eval_grids)
             e_slice = e_dist.data[min_r:max_r+1, min_c:max_c+1]
 
-            if e_slice.shape[1] != 13:
-                print(r_dist.data.shape, e_dist.data.shape)
-                print(res_scale, c_r, c_c)
-                print(min_r, max_r, min_c, max_c)
+            # print(e_slice.shape, kernel.shape)
+            # if e_slice.shape[1] != 5:
+            #     print(r_dist.data.shape, e_dist.data.shape)
+            #     print(res_scale, c_r, c_c)
+            #     print(min_r, max_r, min_c, max_c)
 
             assert e_slice.shape == kernel.shape, \
                 "e_slice and kernel must be the same shape"

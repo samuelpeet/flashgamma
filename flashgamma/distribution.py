@@ -144,7 +144,7 @@ class Distribution(object):
             reference_distribution = self
 
         if new_resolution is None:
-            new_resolution = self.resolution
+            new_resolution = reference_distribution.resolution
             scale = 1
         else:
             scale = new_resolution / reference_distribution.resolution
@@ -162,14 +162,14 @@ class Distribution(object):
         interp_spline = interpolate.RectBivariateSpline(
             self.position[0, 0, :],
             self.position[1, :, 0],
-            self.data
+            self.data.T
         )
 
         # Find data points at new positions
         new_data = interp_spline(x_new, y_new)
         xx, yy = np.meshgrid(x_new, y_new)
         new_distribution = Distribution(
-            new_data,
+            new_data.T,
             resolution=new_resolution,
             position=np.stack([xx, yy])
         )

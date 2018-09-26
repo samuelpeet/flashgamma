@@ -32,15 +32,15 @@ def load_file(filename, filetype):
             reader = csv.reader(f, delimiter='\t')
             rows = list(reader)[278:321]  # Grabs "Dose Counts" table
             data = np.array(rows)
-            y = data[:-2:2, 0]  # Grab non-zero row/cols only
+            y = data[:-2:2, 0][::-1]  # Grab non-zero row/cols only
             x = data[-1, 2::2]
             xx, yy = np.meshgrid(x, y)
             position = np.stack([xx, yy])
             position = position.astype(float) * 10  # Convert cm to mm
-            data = data[:-2:2, 2::2]  # Slice'n'dice to remove zero rows/cols
+            data = np.flipud(data[:-2:2, 2::2])  # Slice'n'dice to remove zeros
             data = data.astype(float)
             new_distribution = Distribution(
-                data, position=position, resolution=10
+                data, position=position, resolution=0.1
             )
 
         elif filetype == "snc_extracted":
@@ -50,11 +50,11 @@ def load_file(filename, filetype):
             data[0, 0] = 0  # Clear Y\X table label
             data = data[:, :-1]
             data = data.astype(float)
-            y = data[1:, 0]
+            y = data[1:, 0][::-1]
             x = data[0, 1:]
             xx, yy = np.meshgrid(x, y)
             position = np.stack([xx, yy])
-            data = data[1:, 1:]  # Slice'n'dice to remove zero rows/cols
+            data = np.flipud(data[1:, 1:])  # Slice'n'dice to remove labels
             new_distribution = Distribution(
                 data, position=position, resolution=1
             )
