@@ -226,16 +226,16 @@ class Distribution(object):
 
         # Set up interpolation function for original grid
         interp_spline = interpolate.RectBivariateSpline(
-            self.position[1, :, 0],
             self.position[0, 0, :],
-            np.flipud(self.data)
+            self.position[1, :, 0],
+            self.data
         )
 
         # Find data points at new positions
-        new_data = interp_spline(y_new, x_new)
-        xx, yy = np.meshgrid(x_new[::-1], y_new)
+        new_data = interp_spline(x_new, y_new)
+        xx, yy = np.meshgrid(x_new, y_new)
         new_distribution = Distribution(
-            np.flipud(new_data),
+            new_data,
             resolution=reference_distribution.resolution*scale,
             position=np.stack([xx, yy])
         )
