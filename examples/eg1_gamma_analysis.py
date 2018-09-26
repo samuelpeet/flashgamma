@@ -23,21 +23,24 @@ eval_dist = load_file(filename, "snc_extracted")
 
 # These two distributions have points at different positions and resolutions.
 # We need to interpolate the evaluated distribution at the points of the
-# reference distribution. For the DTA calculation, we also need to decide how
-# much greater we want the resolution of the evaluated distribution than the
-# reference distribution. The greater the better, but at the cost of increased
-# calculation time. If it is too small, accuracy will be lost due to the coarse
-# discretisation. There is some debate in the literature as to the optimal
-# value; somewhere between 3 and 10 is probably acceptable. Here we choose 5.
+# reference distribution. 
+# 
+# For the DTA calculation, we also need to decide what resolution we want the 
+# evaluated distribution to be. The greater the better, but at the cost of 
+# increased calculation time. If it is too small, accuracy will be lost due to 
+# the coarse discretisation. There is some debate in the literature as to the 
+# optimal value; somewhere between 3 to 10 times finer than the size of
+# the DTA criterion is probably acceptable. We will choose a DTA of 2 mm, so
+# let's set the resolution to 3 points / mm (6 times finer than the DTA)
 eval_dist = eval_dist.scale_grid(
     reference_distribution=ref_dist,
-    scale=5
+    new_resolution=3
 )
 
 # Perform a gamma evaluation in global mode, with 2% dose difference, 2 mm DTA,
 # and no low dose threshold. This will return a full gamma distribution. If we
 # only wanted the pass rate, we would set pass_rate_only=True.
-gamma_dist = gamma_evaluation(
+gamma_dist, pass_rate = gamma_evaluation(
     ref_dist,
     eval_dist,
     delta_dose=2,

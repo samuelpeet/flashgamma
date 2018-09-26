@@ -73,55 +73,62 @@ eval_data = data_x * data_y
 # of the data.
 ref_dist = Distribution(ref_data, resolution=1, position=None)
 
-# We also need an evaluated distribution. Let's just use the same data for now.
-# However, for the DTA calculations to make sense, we need to increase its
-# resolution. We can do this using .scale_grid()
+# We also need an evaluated distribution. Let's use the higher resolution data
+# we prepared earlier.
 eval_dist = Distribution(eval_data, resolution=2, position=None)
 
-# To make thinhs interesting, let's give the the reference distribution a
-# little twist
-# ref_dist.rotation = np.pi / 8
-
+# To make things interesting, let's give the reference distribution a
+# small shift
 ref_dist.translation = np.array([10, 10])
-eval_dist = eval_dist.scale_grid(reference_distribution=ref_dist, scale=1)
 
-# # Now let's have a look at the gamma evaluation
-# gamma_dist = gamma_evaluation(
-#     ref_dist,
-#     eval_dist,
-#     delta_dose=3,
-#     delta_distance=3,
-#     threshold=0,
-#     local=False,
-#     pass_rate_only=False
-# )
+# We need to reinterpolate the evaluated distribution at the new reference
+# distribution positions. 
+#
+# For the DTA calculation, we also need to decide what resolution we want the 
+# evaluated distribution to be. The greater the better, but at the cost of 
+# increased calculation time. If it is too small, accuracy will be lost due to 
+# the coarse discretisation. There is some debate in the literature as to the 
+# optimal value; somewhere between 3 to 10 times finer than the size of
+# the DTA criterion is probably acceptable. We will choose a DTA of 2 mm, so
+# let's set the resolution to 3 points / mm (6 times finer than the DTA)
+eval_dist = eval_dist.scale_grid(
+    reference_distribution=ref_dist,
+    new_resolution=3
+)
 
-# xx, yy = np.meshgrid(x, y)
+# Now let's perform the gamma evaluation
+gamma_dist, pass_rate = gamma_evaluation(
+    ref_dist,
+    eval_dist,
+    delta_dose=2,
+    delta_distance=2,
+    threshold=0,
+    local=False,
+    pass_rate_only=False
+)
 
-# f = plt.figure()
-# ax1 = f.gca(projection='3d')
-# im1 = ax1.plot_surface(xx, yy, dist,cmap=cm.coolwarm)
+# Finally let's plot the results.
+f1, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15,4.2))
+im1 = ax1.pcolormesh(ref_dist.position[0], ref_dist.position[1], ref_dist.data)
+ax1.set_title('Reference Distribution')
+ax1.set_xlabel('X (mm)')
+ax1.set_ylabel('Y (mm)', labelpad=-5)
+c1 = f1.colorbar(im1, ax=ax1)
+c1.set_label('Dose (Gy)', rotation=270, labelpad=12)
 
-# f = plt.figure()
-# ax1 = f.gca()
+im2 = ax2.pcolormesh(eval_dist.position[0], eval_dist.position[1], eval_dist.data)
+ax2.set_title('Evaluated Distribution')
+ax2.set_xlabel('X (mm)')
+ax2.set_ylabel('Y (mm)', labelpad=-5)
+c2 = f1.colorbar(im2, ax=ax2)
+c2.set_label('Dose (Gy)', rotation=270, labelpad=12)
 
-# ax1.plot(eval_dist.position[1, :, 200], eval_dist.data[:, 200], label='eval')
-# ax1.plot(ref_dist.position[1, :, 100], ref_dist.data[:, 100], label='ref')
-# ax1.legend()
+im3 = ax3.pcolormesh(gamma_dist.position[0], gamma_dist.position[1], gamma_dist.data, cmap='RdBu_r')
+ax3.set_title('Gamma Evaluation (2%, 2mm): {:.1f}%'.format(pass_rate))
+ax3.set_xlabel('X (mm)')
+ax3.set_ylabel('Y (mm)', labelpad=-5)
+c3 = f1.colorbar(im3, ax=ax3)
+c3.set_label('Gamma Index', rotation=270)
 
-f = plt.figure()
-ax1 = f.gca()
-im1 = ax1.pcolormesh(ref_dist.position[0], ref_dist.position[1], ref_dist.data)#, cmap=cm.jet)
-f.colorbar(im1, ax=ax1)
-
-f = plt.figure()
-ax1 = f.gca()
-im1 = ax1.pcolormesh(eval_dist.position[0], eval_dist.position[1], eval_dist.data)#, cmap=cm.jet)
-f.colorbar(im1, ax=ax1)
-
-# f = plt.figure()
-# ax1 = f.gca()
-# im1 = ax1.pcolormesh(gamma_dist.position[0], gamma_dist.position[1], gamma_dist.data, cmap='RdBu_r')
-# f.colorbar(im1, ax=ax1)
-
+plt.tight_layout()
 plt.show()

@@ -70,8 +70,9 @@ def gamma_evaluation(r_dist, e_dist, delta_dose=3, delta_distance=3,
         Perform a local gamma evaluation. If false, perform a Van Dyk global
         evaluation instead.
     pass_rate_only : bool
-        Return the overall pass rate only. If false, return the entire gamma
-        map as a new distribution.
+        Return the overall pass rate only. If True, the cython algorithm is
+        triggered instead. This improves performance and is particularly 
+        useful when performing mass gamma evaluatiions.
 
     Returns
     -------
@@ -82,6 +83,11 @@ def gamma_evaluation(r_dist, e_dist, delta_dose=3, delta_distance=3,
         A new distrubution with data values corresponding to the calculated
         gamma index at each position.
     """
+    if pass_rate_only:
+        # Trigger cython implementation
+        raise NotImplementedError("Cython algorithm is not yet implemented, "
+            "please set pass_rate_only=False")
+
     # Create gamma map and set all points to a passing index
     gamma_map = np.ones_like(r_dist.data)
 
@@ -122,6 +128,12 @@ def gamma_evaluation(r_dist, e_dist, delta_dose=3, delta_distance=3,
             min_r, max_r = (c_r - eval_grids, c_r + eval_grids)
             min_c, max_c = (c_c - eval_grids, c_c + eval_grids)
             e_slice = e_dist.data[min_r:max_r+1, min_c:max_c+1]
+
+            if e_slice.shape[1] != 13:
+                print(r_dist.data.shape, e_dist.data.shape)
+                print(res_scale, c_r, c_c)
+                print(min_r, max_r, min_c, max_c)
+
             assert e_slice.shape == kernel.shape, \
                 "e_slice and kernel must be the same shape"
 
@@ -150,22 +162,16 @@ def gamma_evaluation(r_dist, e_dist, delta_dose=3, delta_distance=3,
             if D_r < e_dist.data[c_r, c_c]:
                 gamma_map[i, j] = gamma_map[i, j] * -1  # Point is cold
 
-    if pass_rate_only:
-        num_passing = 0
-        for i in range(gamma_map.shape[0]):
-            for j in range(gamma_map.shape[1]):
-                if np.abs(gamma_map[i, j]) <= 1.0:
-                    num_passing = num_passing + 1
-        total_points = gamma_map.size - np.sum(gamma_map == np.inf)
-        return num_passing / total_points * 100
+    num_passing = np.sum(np.abs(gamma_map) <= 1.0)
+    total_points = gamma_map.size - np.sum(gamma_map == np.inf)
+    pass_rate = num_passing / total_points * 100
 
-    else:
-        new_distribution = Distribution(
-            gamma_map,
-            resolution=r_dist.resolution,
-            position=r_dist.position
-        )
-        return new_distribution
+    new_distribution = Distribution(
+        gamma_map,
+        resolution=r_dist.resolution,
+        position=r_dist.position
+    )
+    return new_distribution, pass_rate
 
 def maximum_allowed_dose_difference(r_dist, e_dist, delta_dose=3,
                                     delta_distance=3, threshold=0, simple=True,

@@ -23,8 +23,12 @@ class TestConstructor:
         x = np.linspace(-5, 5, 11)
         y = np.linspace(-5, 5, 11)
         xx, yy = np.meshgrid(x, y)
-        correct = np.stack([xx, yy])
-        np.testing.assert_array_equal(simple_dist.position, correct)
+        correct_pos = np.stack([xx, yy])
+        np.testing.assert_array_equal(simple_dist.position, correct_pos)
+
+        correct_data = np.zeros((11, 11))
+        correct_data[3:8, 3:8] = 2.0
+        np.testing.assert_array_equal(simple_dist.data, correct_data)
     
     def test_constructor_with_position(self, simple_dist_with_position):
         x = np.linspace(-4, 6, 11)
@@ -43,6 +47,10 @@ class TestTranslation:
         correct = np.stack([xx, yy])
         simple_dist.translation = np.array([1, 2])
         np.testing.assert_array_equal(
+            simple_dist.translation,
+            np.array([1, 2])
+        )
+        np.testing.assert_array_equal(
             simple_dist.position, correct
         )
 
@@ -58,6 +66,7 @@ class TestRotation:
         ])
 
         simple_dist.rotation = np.pi / 2
+        assert simple_dist.rotation == np.pi / 2   
         np.testing.assert_array_almost_equal(
             simple_dist.position, pos_rotated
         )
@@ -73,7 +82,7 @@ class TestScaleGrid:
         position = np.stack([xx, yy])
         simple_dist_double_res = Distribution(data, position=position)
 
-        simple_dist = simple_dist.scale_grid(scale=2)
+        simple_dist = simple_dist.scale_grid(new_resolution=2)
         np.testing.assert_array_almost_equal(
             simple_dist.position,
             simple_dist_double_res.position

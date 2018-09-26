@@ -112,80 +112,7 @@ class Distribution(object):
     def position(self, pos):
         self._position = pos
 
-    def interpolate_on(self, reference_distribution):
-        """Interpolate new data values from arbitrarily spaced points.
-
-        Generates new data values by interpolating the current disttribution
-        at the positions specified in the reference distribution. The positions
-        do not need to regularly spaced or shaped.
-
-        Parameters
-        ----------
-        reference_distribution : Distribution
-            Interpolate new data values at the positions in this reference
-            distribution.
-
-        Returns
-        -------
-        Distribution
-            A new distrubution with points at locations given by the reference
-            distribution.
-        """
-        new_data = interpolate.griddata(
-            (self.position[0, :, :].flatten(),
-            self.position[1, :, :].flatten()),
-            self.data.flatten(),
-            (reference_distribution.position[0, :, :].flatten(),
-            reference_distribution.position[1, :, :].flatten()),
-            method='linear'
-        )
-        new_data = new_data.reshape(reference_distribution.data.shape)
-        new_distribution = Distribution(
-            new_data,
-            resolution=reference_distribution.resolution,
-            position=reference_distribution.position
-        )
-        return new_distribution
-
-    def interpolate_on_rect(self, reference_distribution):
-        """Interpolate new data values from gridded points.
-
-        Generates new data values by interpolating the current disttribution
-        at the specified positions. Similar to interpolate_on(), but optimised
-        for distributions with regularly spaced gridded points. See the
-        documentation for scipy.interpolate.RectBivariateSpline for more
-        information.
-
-        Parameters
-        ----------
-        reference_distribution : Distribution
-            Interpolate new data values at the positions in this reference
-            distribution.
-
-        Returns
-        -------
-        Distribution
-            A new distrubution with points at locations given by the reference
-            distribution.
-        """
-        interp_spline = interpolate.RectBivariateSpline(
-            self.position[1, :, 0][::-1],
-            self.position[0, 0, :],
-            np.flipud(self.data)
-        )
-        new_data = interp_spline(
-            reference_distribution.position[1, :, 0][::-1],
-            reference_distribution.position[0, 0, :]
-        )
-        new_distribution = Distribution(
-            np.flipud(new_data),
-            resolution=reference_distribution.resolution,
-            position=reference_distribution.position
-        )
-        return new_distribution
-
-
-    def scale_grid(self, reference_distribution=None, scale=1):
+    def scale_grid(self, reference_distribution=None, new_resolution=None):
         """Increase or decrease the resolution of a distribution.
 
         Scales the resolution of the distribution by first interpolating the
@@ -202,9 +129,10 @@ class Distribution(object):
         reference_distribution : Distribution
             Interpolate new data values at the positions in this reference
             distribution.
-        scale : int
-            increase the number of points in each dimension of the reference
-            distribution by `scale` times.
+        new_resolution : float
+            The desired resolution of the scaled distribution, in pixels / mm.
+            If None, the scaled distribution will have the same resolution as
+            reference_distribution.
 
         Returns
         -------
@@ -214,6 +142,12 @@ class Distribution(object):
         """
         if reference_distribution is None:
             reference_distribution = self
+
+        if new_resolution is None:
+            new_resolution = self.resolution
+            scale = 1
+        else:
+            scale = new_resolution / reference_distribution.resolution
 
         # Generate new positions by scaling the positions given in
         # reference_distribution
@@ -236,7 +170,7 @@ class Distribution(object):
         xx, yy = np.meshgrid(x_new, y_new)
         new_distribution = Distribution(
             new_data,
-            resolution=reference_distribution.resolution*scale,
+            resolution=new_resolution,
             position=np.stack([xx, yy])
         )
         return new_distribution
