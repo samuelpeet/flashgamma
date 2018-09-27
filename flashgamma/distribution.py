@@ -151,18 +151,20 @@ class Distribution(object):
 
         # Generate new positions by scaling the positions given in
         # reference_distribution
-        y = reference_distribution.position[1, :, 0]
-        yscale = scale * (len(y) - 1) + 1
-        y_new = np.linspace(y[0], y[-1], yscale)
         x = reference_distribution.position[0, 0, :]
+        y = reference_distribution.position[1, :, 0]
         xscale = scale * (len(x) - 1) + 1
+        yscale = scale * (len(y) - 1) + 1
         x_new = np.linspace(x[0], x[-1], xscale)
+        y_new = np.linspace(y[0], y[-1], yscale)
 
-        # Set up interpolation function for original grid
+        # Set up linear interpolation function for original grid
         interp_spline = interpolate.RectBivariateSpline(
             self.position[0, 0, :],
             self.position[1, :, 0],
-            self.data.T
+            self.data.T,
+            kx=1,
+            ky=1
         )
 
         # Find data points at new positions
