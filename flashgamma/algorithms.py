@@ -72,7 +72,7 @@ def gamma_evaluation(r_dist, e_dist, delta_dose=3, delta_distance=3,
     pass_rate_only : bool
         Return the overall pass rate only. If True, the cython algorithm is
         triggered instead. This improves performance and is particularly 
-        useful when performing mass gamma evaluatiions.
+        useful when performing mass gamma evaluations.
 
     Returns
     -------

@@ -13,84 +13,33 @@ from scipy import special
 from flashgamma import Distribution, gamma_evaluation
 
 # We need a 2D array of dose data. This array could come from any source we
-# like. For this example, let's create a 10 x 10 cm square that looks like it
-# could have come from a linac beam. The function used here comes from !REF
-
-# Define the necessary constants
-eta = 1
-T = 0.01
-A = 0.173
-B1 = 0.456
-B2 = 2.892
-x0 = 0
-C = 0
-
-# Create an array of 100 points and stick them into the function
-x = np.linspace(-50, 50, 100)
-D1 = (
-    eta * ( T + (1 - T)*(A * special.erf(B1 * (x0 - x)) + (1 - A) *
-    special.erf(B2 * (x0 - x)))) + C
-)
-D1 = D1 / 2 + 0.5
-
-# Make a mirror image of the curve and stick the two ends together
-D2 = D1[::-1]
-D = np.append(D2, 1.0)
-D = np.append(D, D1)
-
-# Stack copies of the curve next to each along the x and y directions
-data_x = D
-for i in range(200):
-    data_x = np.vstack((data_x, D))
-data_y = D[np.newaxis].T
-for i in range(200):
-    data_y = np.hstack((data_y, D[np.newaxis].T))
-
-# Combine the two directional stacks to get the final 2D surface
-ref_data = data_x * data_y
-
-# Do it all again at higher resolution for the evaluated data
-x = np.linspace(-50, 50, 200)
-D1 = (
-    eta * ( T + (1 - T)*(A * special.erf(B1 * (x0 - x)) + (1 - A) *
-    special.erf(B2 * (x0 - x)))) + C
-)
-D1 = D1 / 2 + 0.5
-D2 = D1[::-1]
-D = np.append(D2, 1.0)
-D = np.append(D, D1)
-data_x = D
-for i in range(400):
-    data_x = np.vstack((data_x, D))
-data_y = D[np.newaxis].T
-for i in range(400):
-    data_y = np.hstack((data_y, D[np.newaxis].T))
-eval_data = data_x * data_y
-
+# like. For this example, let's just create a simple square.
+data = np.zeros((201, 201))
+data[50:150, 50:150] = 2.0
 
 # Now that we have the 2D dose data, we can create a reference Distribution
 # object. If we set position=None, it will assume the origin is at the centre
 # of the data.
-ref_dist = Distribution(ref_data, resolution=1, position=None)
+ref_dist = Distribution(data, resolution=1, position=None)
 
-# We also need an evaluated distribution. Let's use the higher resolution data
-# we prepared earlier.
-eval_dist = Distribution(eval_data, resolution=2, position=None)
+# We also need an evaluated distribution. Let's just use the same square data.
+eval_dist = Distribution(data, resolution=1, position=None)
 
 # To make things interesting, let's give the reference distribution a
 # small shift
-ref_dist.translation = np.array([10, 10])
+ref_dist.translation = np.array([5, 5])
 
-# We need to reinterpolate the evaluated distribution at the new reference
+# We now need to reinterpolate the evaluated distribution at the new reference
 # distribution positions. 
 #
 # For the DTA calculation, we also need to decide what resolution we want the 
-# evaluated distribution to be. The greater the better, but at the cost of 
-# increased calculation time. If it is too small, accuracy will be lost due to 
-# the coarse discretisation. There is some debate in the literature as to the 
-# optimal value; somewhere between 3 to 10 times finer than the size of
-# the DTA criterion is probably acceptable. We will choose a DTA of 2 mm, so
-# let's set the resolution to 3 points / mm (6 times finer than the DTA)
+# evaluated distribution to be. The greater the better (with diminishing 
+# returns), but at the cost of increased calculation time. If it is too small, 
+# accuracy will be lost due to the coarse discretisation. There is some debate 
+# in the literature as to the optimal value; somewhere between 3 to 10 times
+# finer than the size of the DTA criterion is probably acceptable. We will
+# choose a DTA of 2 mm, so let's set the resolution to 3 points / mm (6 times
+# finer than the DTA)
 eval_dist = eval_dist.scale_grid(
     reference_distribution=ref_dist,
     new_resolution=3
@@ -107,7 +56,7 @@ gamma_dist, pass_rate = gamma_evaluation(
     pass_rate_only=False
 )
 
-# Finally let's plot the results.
+# Finally, let's plot the results.
 f1, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15,4.2))
 im1 = ax1.pcolormesh(ref_dist.position[0], ref_dist.position[1], ref_dist.data)
 ax1.set_title('Reference Distribution')
