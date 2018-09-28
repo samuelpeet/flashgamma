@@ -13,3 +13,6 @@ matplotlib = "*"
 [dev-packages]
 pylint = "*"
 pytest = "*"
+setuptools = "*"
+wheel = "*"
+twine = "*"
