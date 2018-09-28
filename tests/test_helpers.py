@@ -32,7 +32,7 @@ class TestLoadFile:
 class TestCreateDistanceKernal:
     def test_create_distance_kernel(self):
         dta = 2
-        resolution = 2
+        resolution = 0.5
         kernel = create_distance_kernel(dta, resolution)
         correct = np.array([[2.5e8, 1.0e0, 2.5e8],
                             [1.0e0, 0.0e0, 1.0e0],
