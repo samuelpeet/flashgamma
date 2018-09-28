@@ -1,7 +1,8 @@
 import numpy as np
 import math
 from .distribution import Distribution
-
+from .helpers import create_distance_kernel
+from .gamma_evaluation_c import gamma_evaluation_c
 
 def difference_between(dist1, dist2, kind="relative"):
     """Compute the difference between two distributions.
@@ -42,8 +43,8 @@ def difference_between(dist1, dist2, kind="relative"):
     )
     return new_distribution
 
-def gamma_evaluation(r_dist, e_dist, delta_dose=3, delta_distance=3,
-                        threshold=0, local=False, pass_rate_only=False):
+def gamma(r_dist, e_dist, delta_dose=3, delta_distance=3,
+                        threshold=0, local=False):
     """Perform a gamma evaluation between a reference distribution and an
     evaluated distribution.
 
@@ -69,25 +70,15 @@ def gamma_evaluation(r_dist, e_dist, delta_dose=3, delta_distance=3,
     local : bool
         Perform a local gamma evaluation. If false, perform a Van Dyk global
         evaluation instead.
-    pass_rate_only : bool
-        Return the overall pass rate only. If True, the cython algorithm is
-        triggered instead. This improves performance and is particularly 
-        useful when performing mass gamma evaluations.
 
     Returns
     -------
-    float
-        If pass_rate_only is true, returns the overall pass rate of the
-        gamma evalution, in %.
     Distribution
         A new distrubution with data values corresponding to the calculated
         gamma index at each position.
+    float
+        The overall pass rate of the gamma evaluation, in %.
     """
-    if pass_rate_only:
-        # Trigger cython implementation
-        raise NotImplementedError("Cython algorithm is not yet implemented, "
-            "please set pass_rate_only=False")
-
     # Create gamma map and set all points to a passing index
     gamma_map = np.ones_like(r_dist.data)
     gamma_map[:, :] = np.inf
@@ -129,13 +120,6 @@ def gamma_evaluation(r_dist, e_dist, delta_dose=3, delta_distance=3,
             min_r, max_r = (c_r - eval_grids, c_r + eval_grids)
             min_c, max_c = (c_c - eval_grids, c_c + eval_grids)
             e_slice = e_dist.data[min_r:max_r+1, min_c:max_c+1]
-
-            # print(e_slice.shape, kernel.shape)
-            # if e_slice.shape[1] != 5:
-            #     print(r_dist.data.shape, e_dist.data.shape)
-            #     print(res_scale, c_r, c_c)
-            #     print(min_r, max_r, min_c, max_c)
-
             assert e_slice.shape == kernel.shape, \
                 "e_slice and kernel must be the same shape"
 
@@ -174,6 +158,81 @@ def gamma_evaluation(r_dist, e_dist, delta_dose=3, delta_distance=3,
         position=r_dist.position
     )
     return new_distribution, pass_rate
+
+def gamma_pass_rate(r_dist, e_dist, delta_dose=3, delta_distance=3,
+                        threshold=0, local=False):
+    """Perform a gamma evaluation between a reference distribution and an
+    evaluated distribution, and return the pass rate only
+
+    Performs a gamma analysis between a reference distribution and an
+    evaluated distribution. Parts of this code are inspired by Christopher
+    Poole's pygamma sofware at https://github.com/christopherpoole/pygamma.
+    Returns a pass rate only, allowing a more efficient gamma analysis
+    algorithm implementation.
+
+    Parameters
+    ----------
+    r_dist : Distribution
+        The reference distribution. Typically this would be measured dose
+        data.
+    e_dist : Distribution
+        The distribution to evaluate gamma indices against. Typically this
+        would be radiotherapy plan data.
+    delta_dose : float
+        Dose difference criterion, in %. May be a single value or an ndarray.
+    delta_distance : float
+        Distance to agreement criterion, in mm. May be a single value or an
+        ndarray.
+    threshold : float
+        Fraction of the maximum evaluated distribution value under which
+        gamma calculations will be skipped, in %.
+    local : bool
+        Perform a local gamma evaluation. If false, perform a Van Dyk global
+        evaluation instead.
+
+    Returns
+    -------
+    float
+        ndarray of pass rates, in %.
+    """
+    if isinstance(delta_dose, np.ndarray):
+        pass
+    elif isinstance(float(delta_dose), float):
+        delta_dose = np.array([delta_dose])
+    else:
+        assert False, \
+        "Dose criteria must be a single float or ndarray of floats"
+
+    if isinstance(delta_distance, np.ndarray):
+        pass
+    elif isinstance(float(delta_distance), float):
+        delta_distance = np.array([delta_distance])
+    else:
+        assert False, \
+        "DTA criteria must be a single float or ndarray of floats"
+
+    local = 1 if local else 0
+    e_dist_max = np.max(e_dist.data)
+    pass_rates = np.zeros((len(delta_dose), len(delta_distance)))
+
+    for xi, xv in enumerate(delta_distance):
+
+        # Construct kernel only once per DTA criterion
+        kernel = create_distance_kernel(delta_distance[xi], e_dist.resolution)
+
+        for yi, yv in enumerate(delta_dose):
+
+            # Perform gamma anlysis
+            pass_rates[yi, xi] = gamma_evaluation_c(
+                r_dist.data, r_dist.resolution,
+                e_dist.data, e_dist.resolution, e_dist_max,
+                np.ones_like(r_dist.data),
+                kernel,
+                np.ones_like(kernel),
+                d_dose=float(delta_dose[yi]), d_dist=float(delta_distance[xi]),
+                thresh=float(threshold), local=int(local)
+            )
+    return pass_rates
 
 def maximum_allowed_dose_difference(r_dist, e_dist, delta_dose=3,
                                     delta_distance=3, threshold=0, simple=True,

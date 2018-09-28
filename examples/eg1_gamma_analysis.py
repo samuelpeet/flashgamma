@@ -11,14 +11,14 @@ from os.path import dirname, abspath, join
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
-from flashgamma import load_file, gamma_evaluation, difference_between
+from flashgamma import load_file, gamma
 
 # Load the reference distribution. This is typically from a measurement, such
 # as with an arccheck.
 filename = join(dirname(abspath(__file__)), "sample_arccheck_measurement.txt")
 ref_dist = load_file(filename, "arccheck")
 
-# Now load the evaluated distribution. This is typically plan data from a TPS. 
+# Now load the evaluated distribution. This is typically plan data from a TPS.
 # In this case we will load the plan data matching the arccheck diode positions
 # extracted by SNC Patient.
 filename = join(dirname(abspath(__file__)), "sample_snc_extracted_data.snc")
@@ -26,11 +26,11 @@ eval_dist = load_file(filename, "snc_extracted")
 
 # The two distributions have points at different positions and resolutions.
 # We need to interpolate the evaluated distribution at the points of the
-# reference distribution. 
+# reference distribution.
 #
-# For the DTA calculation, we need to decide what resolution we want the 
-# evaluated distribution to be. If it is too poor, accuracy will be lost due to 
-# the coarse discretisation. There is some debate in the literature as to the 
+# For the DTA calculation, we need to decide what resolution we want the
+# evaluated distribution to be. If it is too poor, accuracy will be lost due to
+# the coarse discretisation. There is some debate in the literature as to the
 # optimal value; somewhere between 3 to 10 times finer than the size of
 # the DTA criterion is probably acceptable. We will choose a DTA of 2 mm, so
 # let's set the resolution to 3 points / mm (6 times finer than the DTA)
@@ -39,16 +39,14 @@ eval_dist = eval_dist.scale_grid(
 )
 
 # Perform a gamma evaluation in global mode, with 2% dose difference, 2 mm DTA,
-# and no low dose threshold. This will return a full gamma distribution. If we
-# only wanted the pass rate, we would set pass_rate_only=True.
-gamma_dist, pass_rate = gamma_evaluation(
+# and no low dose threshold.
+gamma_dist, pass_rate = gamma(
     ref_dist,
     eval_dist,
     delta_dose=2,
     delta_distance=2,
     threshold=0,
-    local=False,
-    pass_rate_only=False
+    local=False
 )
 
 # Finally let's plot the results.

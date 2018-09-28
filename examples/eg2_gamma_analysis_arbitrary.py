@@ -10,7 +10,7 @@ supported by the load_file() function.
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import special
-from flashgamma import Distribution, gamma_evaluation
+from flashgamma import Distribution, gamma
 
 # We need a 2D array of dose data. This array could come from any source we
 # like. For this example, let's just create a simple square.
@@ -30,12 +30,12 @@ eval_dist = Distribution(data, resolution=1, position=None)
 ref_dist.translation = np.array([5, 5])
 
 # We now need to reinterpolate the evaluated distribution at the new reference
-# distribution positions. 
+# distribution positions.
 #
-# For the DTA calculation, we also need to decide what resolution we want the 
-# evaluated distribution to be. The greater the better (with diminishing 
-# returns), but at the cost of increased calculation time. If it is too small, 
-# accuracy will be lost due to the coarse discretisation. There is some debate 
+# For the DTA calculation, we also need to decide what resolution we want the
+# evaluated distribution to be. The greater the better (with diminishing
+# returns), but at the cost of increased calculation time. If it is too small,
+# accuracy will be lost due to the coarse discretisation. There is some debate
 # in the literature as to the optimal value; somewhere between 3 to 10 times
 # finer than the size of the DTA criterion is probably acceptable. We will
 # choose a DTA of 2 mm, so let's set the resolution to 3 points / mm (6 times
@@ -46,14 +46,13 @@ eval_dist = eval_dist.scale_grid(
 )
 
 # Now let's perform the gamma evaluation
-gamma_dist, pass_rate = gamma_evaluation(
+gamma_dist, pass_rate = gamma(
     ref_dist,
     eval_dist,
     delta_dose=2,
     delta_distance=2,
     threshold=0,
-    local=False,
-    pass_rate_only=False
+    local=False
 )
 
 # Finally, let's plot the results.

@@ -99,11 +99,11 @@ def create_distance_kernel(dta, resolution):
     ndarray
         Returns a kernel to be fed into gamma evaluations.
     """
-    eval_grids = math.ceil(dta / resolution)
+    eval_grids = math.ceil(dta * resolution)
     x = np.linspace(-eval_grids, eval_grids, 2 * eval_grids + 1)
     kernel = np.stack(np.meshgrid(x, x))
     kernel = np.abs(kernel)
-    kernel *= resolution
+    kernel /= resolution
     kernel = np.sum(kernel, axis=0)
     kernel = kernel**2
     kernel[np.sqrt(kernel) > dta] = 1000000000.0

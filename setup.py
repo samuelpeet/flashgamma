@@ -1,9 +1,20 @@
-import setuptools
+from setuptools import setup, find_packages
+from setuptools.extension import Extension
+from Cython.Build import cythonize
+import numpy
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
-setuptools.setup(
+extensions = [
+    Extension(
+        "flashgamma.gamma_evaluation_c",
+        ["flashgamma/gamma_evaluation_c.pyx"],
+        include_dirs=[numpy.get_include()],
+    ),
+]
+
+setup(
     name="flashgamma",
     version="0.0.2",
     author="Samuel Peet",
@@ -12,7 +23,7 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/samuelpeet/flashgamma",
-    packages=setuptools.find_packages(),
+    packages=find_packages(),
     install_requires=[
         'numpy',
         'scipy'
@@ -22,4 +33,5 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
+    ext_modules = cythonize(extensions, gdb_debug=True)
 )
