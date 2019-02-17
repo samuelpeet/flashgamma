@@ -18,7 +18,7 @@ setup(
     name="flashgamma",
     version="0.0.2",
     author="Samuel Peet",
-    author_email="samuel.peet.physics@example.com",
+    author_email="samuel.peet.physics@gmail.com",
     description="Analysis of radiotherapy dose distributions",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -26,7 +26,8 @@ setup(
     packages=find_packages(),
     install_requires=[
         'numpy',
-        'scipy'
+        'scipy',
+        'matplotlib'
     ],
     classifiers=[
         "Programming Language :: Python :: 3",
