@@ -31,7 +31,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="flashgamma",
-    version="0.0.6",
+    version="0.0.1",
     author="Samuel Peet",
     author_email="samuel.peet.physics@gmail.com",
     description="Analysis of radiotherapy dose distributions",
