@@ -14,13 +14,13 @@ from flashgamma import load_file, gamma, gamma_pass_rate
 
 # Load the reference distribution. This is typically from a measurement, such
 # as with an arccheck.
-filename = join(dirname(abspath(__file__)), "sample_arccheck_measurement.txt")
+filename = "sample_arccheck_measurement.txt"
 ref_dist = load_file(filename, "arccheck")
 
 # Now load the evaluated distribution. This is typically plan data from a TPS.
 # In this case we will load the plan data matching the arccheck diode positions
 # extracted by SNC Patient.
-filename = join(dirname(abspath(__file__)), "sample_snc_extracted_data.snc")
+filename = "sample_snc_extracted_data.snc"
 eval_dist = load_file(filename, "snc_extracted")
 
 # The two distributions have points at different positions and resolutions.
