@@ -28,3 +28,9 @@ Checkout the examples folder for details.
 ## Caveats
 
 This code was written for personal educational purposes. Although it was shown internally to perform similarly to a range of proprietary gamma analysis codes, it is in no way guaranteed to be free from bugs and errors.
+
+## Literature
+
+This software was featured in the following publication:
+
+Samuel C. Peet, Liting Yu, Sarah Maxwell, Scott B. Crowe, Jamie V. Trapp, Tanya Kairn. (2020). "Exploring the gamma surface: A new method for visualising modulated radiotherapy quality assurance results". Physica Medica: European Journal of Medical Physics, Volume 78, 166-172. (https://doi.org/10.1016/j.ejmp.2020.09.021)
