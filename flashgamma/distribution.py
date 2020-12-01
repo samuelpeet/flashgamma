@@ -155,8 +155,8 @@ class Distribution(object):
         y = reference_distribution.position[1, :, 0]
         xscale = scale * (len(x) - 1) + 1
         yscale = scale * (len(y) - 1) + 1
-        x_new = np.linspace(x[0], x[-1], xscale)
-        y_new = np.linspace(y[0], y[-1], yscale)
+        x_new = np.linspace(x[0], x[-1], int(xscale))
+        y_new = np.linspace(y[0], y[-1], int(yscale))
 
         # Set up linear interpolation function for original grid
         interp_spline = interpolate.RectBivariateSpline(
